@@ -2,15 +2,18 @@
 //  ContentView.swift
 //  GuessTheFlag
 //
-//  Created by Admin on 17/07/22.
+//  Created by Saurabh Jamadagni on 17/07/22.
 //
 
 import SwiftUI
 
 struct ContentView: View {
     @State private var showingScoreAlert = false
+    @State private var receievedWrongAns = false
     @State private var scoreMessage = ""
     @State private var score = 0
+    @State private var questionsAsked = 0
+    @State private var receivedAns = ""
     
     @State private var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Monaco", "Nigeria", "Poland", "Russia", "Spain", "UK", "US"].shuffled()
     @State private var correctAnswer = Int.random(in: 0...2)
@@ -27,7 +30,7 @@ struct ContentView: View {
                 Spacer()
                 Text("Guess the Flag!")
                     .font(.largeTitle.weight(.bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(LinearGradient(gradient: Gradient(colors: [.yellow, .teal]), startPoint: .leading, endPoint: .trailing))
                 
                 VStack(spacing: 20) {
                     VStack {
@@ -41,7 +44,9 @@ struct ContentView: View {
                     
                     ForEach(0..<3) { number in
                         Button {
+                            receivedAns = countries[number]
                             checkAnswer(number)
+                            askQuestion()
                         } label: {
                             Image(countries[number])
                                 .renderingMode(.original)
@@ -66,8 +71,14 @@ struct ContentView: View {
             }
             .padding()
         }
-        .alert(scoreMessage, isPresented: $showingScoreAlert) {
-            Button("Continue", action: askQuestion)
+        .alert(scoreMessage, isPresented: $receievedWrongAns) {
+            Button("OK") { }
+        } message: {
+            Text("That's the flag of \(receivedAns)")
+        }
+        
+        .alert("Game Over", isPresented: $showingScoreAlert) {
+            Button("Restart", action: resetGame)
         } message: {
             Text("Your score is \(score)")
         }
@@ -76,17 +87,30 @@ struct ContentView: View {
     func checkAnswer(_ number: Int) {
         if number == correctAnswer {
             scoreMessage = "Correct!"
+            // removes the current asked country to avoid repetion
+            let _ = countries.remove(at: number)
             score += 1
         } else {
             scoreMessage = "Wrong :("
+            receievedWrongAns = true
         }
-        
-        showingScoreAlert = true
+        questionsAsked += 1
+        if questionsAsked == 8 {
+            showingScoreAlert = true
+        }
     }
     
     func askQuestion() {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
+    }
+    
+    func resetGame() {
+        score = 0
+        questionsAsked = 0
+        // we reassign countries to have all the countries again.
+        countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Monaco", "Nigeria", "Poland", "Russia", "Spain", "UK", "US"]
+        askQuestion()
     }
 }
 
